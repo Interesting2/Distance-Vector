@@ -6,39 +6,46 @@ from Node import Node
 from Server import Server
 from Client import Client
 
-# network = {
-#     # keys from A to J 
-#     # empty dictionary as value
-#     'A': {},
-#     'B': {},
-#     'C': {},
-#     'D': {},
-#     'E': {},
-#     'F': {},
-#     'G': {},
-#     'H': {},
-#     'I': {},
-#     'J': {}
-
-# }
 def build_table(id, port, data):
     node = Node(id, port)
-    node.init_table(id, 0.0)      # itself
+
+    neighbours = {}
     for line in data:
+        node.add_node_timer(line[0])
         node.add_neighbour(line[0], int(line[2]))
-        node.init_table(line[0], float(line[1]))
+        neighbours[line[0]] = float(line[1])
+
+    table = {
+        'A': ('', 0.0), 
+        'B': ('', 0.0), 
+        'C': ('', 0.0), 
+        'D': ('', 0.0), 
+        'E': ('', 0.0), 
+        'F': ('', 0.0), 
+        'G': ('', 0.0), 
+        'H': ('', 0.0), 
+        'I': ('', 0.0), 
+        'J': ('', 0.0)
+    }
+    for k in table:
+        if k == id: table[k] = (k, 0.0); continue
+        if k in neighbours:
+            table[k] = (id, neighbours[k])
+        else:
+            table[k] = ('', float('inf'))
+    node.init_table(table)
     return node
 
 def parse_file(file_name):
     with open(file_name, 'r') as f:
         lines = f.readlines()
         num_lines = lines[0].strip('\n')
-        # print(num_lines)
+        print(num_lines)
         data = []
         for i in range(1, int(num_lines) + 1):
             line = lines[i].strip().split(' ')
             data.append(line)
-        # print(data)
+        print(data)
         return data
 
 def init_server(node):
@@ -50,13 +57,14 @@ def init_client(node):
 def start_program(socket):
     socket.run()
 
+
 def main(id, port, config):
     # pre-processing
     data = parse_file(config)
     node = build_table(id, port, data)
     print(node)
-
-    # 2 threads each running the server and client
+    
+    # # 2 threads each running the server and client
     server = init_server(node)
     threading.Thread(target=start_program, args=(server, )).start()
 

@@ -106,7 +106,6 @@ class Client():
         neighbours = self.node.get_neighbours()
         while i < len(neighbours):
             id, port = neighbours[i]
-            
             # print(f"Client {self.node.get_id()} is sending packets to {id} server's socket at port {port}")
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:

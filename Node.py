@@ -1,3 +1,4 @@
+import time
 
 class Node():
     def __init__(self, id, port):
@@ -13,10 +14,17 @@ class Node():
         self.config = False
         self.received = {}
         self.counter = 0
+        self.timer = {}
 
     def __str__(self):
         return f"Id is: {self.id}\nPort is: {self.port}\nNeighbours are: {self.neighbours}\nTable is: {self.table}\n"
 
+    def add_node_timer(self, id):
+        self.timer[id] = time.time()
+    
+    def get_node_timer(self, id):
+        return self.timer[id]
+        
     def add_neighbour(self, id, port):
         self.neighbours.append((id, port))
 
@@ -35,8 +43,8 @@ class Node():
     def get_port(self):
         return self.port
 
-    def init_table(self, id, link_cost):
-        self.table[id] = (self.id, link_cost)
+    def init_table(self, table):
+        self.table = table
                 
     def get_updated(self):
         return self.updated

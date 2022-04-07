@@ -6,15 +6,11 @@ import time
 import json
 
 IP = "127.0.0.1"
-TIMER = time.time()
 
-def remove_failed_link(node, failure):
-    print(f"Node {node.get_id()} failure links")
-    print(failure)
-    for k,v in node.get_table().items():
-        path, link_cost = v
-        if k in failure:
-            node.get_table()[k] = (path, float('inf'))  # sets to infinity
+def remove_failed_link(node, id):
+    print(f"Node {node.get_id()}'s link with {id} failed")
+    node.get_table()[id] = ('', float('inf'))
+    print(node.get_table()) 
 
 
 def calc_cost(node, original_dist, new_dist, from_node, target_node, dir):
@@ -53,13 +49,7 @@ def calc_cost(node, original_dist, new_dist, from_node, target_node, dir):
             # print("IM HERE")
             # print(n)
             n_id, n_port = n
-            if n_id == from_node:
-                # print("IS A NEIGHBOUR")
-                # is a neighbour
-                if n_id not in node.received:
-                    node.received[n_id] = 1
-                else: 
-                    node.received[n_id] += 1
+            if n_id == target_node:
                 node.config = True
                 break
         return False
@@ -83,25 +73,27 @@ def update_table(node, packets):
         return
         
 
-    global TIMER
-
     from_node = "" 
     converged = True
+
+    for id, link_cost_array in packets.items():
+        if link_cost_array[1] == 0:
+            from_node = id
 
     for id, link_cost_array in packets.items():
         dir, link_cost = link_cost_array
         # print(dir, link_cost)
         # print('---------------------------')
+
+        # don't check if id is itself or the link cost of a node is infinity
         if id == node.get_id(): continue  # if id is itself
-        if link_cost == float('inf'): continue  # failed link
-        if link_cost == 0: 
-            from_node = id 
-            continue
+        if link_cost == float('inf'): continue  
+
         # Start bellford algorithm 
         
-        # Check if the target node already exists 
-        # if not, then just add it to the table
-        if id not in node.get_table():
+        # if link cost is infinity, then set infinity to the new cost
+        if node.get_table()[id][1] == float('inf'):
+            # print("From Node " + from_node)
             key = node.get_id() + dir
             val = round(link_cost + node.get_table()[from_node][1], 1)
             
@@ -110,22 +102,15 @@ def update_table(node, packets):
             # print("Id not in table. Updated table: ", end="")
             # print(node.get_table()[id])
 
-            # Link Cost changes
 
+            # if the updated node is a neighbour, then we modify the config file
             for n in node.get_neighbours(): 
                 # print("IM HERE")
                 # print(n)
                 n_id, n_port = n
-                if n_id == from_node:
-                    # print("IS A NEIGHBOUR")
-                    # is a neighbour
-                    if n_id not in node.received:
-                        node.received[n_id] = 1
-                    else: 
-                        node.received[n_id] += 1
+                if n_id == id:
                     node.config = True
-                    break 
-
+            # print("END")
             continue
         # original distance
 
@@ -138,23 +123,24 @@ def update_table(node, packets):
         is_converge = calc_cost(node, original_dist, new_dist, from_node, id, dir)
         if is_converge == False: converged = False
     
+    node.add_node_timer(from_node)   # reset its timer
+    
     if converged: node.counter += 1
     if node.counter == len(node.get_neighbours()):
         # converged
         node.updated = True
         node.counter = 0
     
-    failure = []
-    end_timer = time.time() - TIMER
-    if end_timer >= 20:     # 20 seconds threshold for not sending packets
-        for n in node.get_neighbours():
-            n_id, n_port = n
-            if n_id not in node.received: 
-                failure += [n_id]
-        node.received = {}
-        remove_failed_link(node, failure)
-        node.config = True
-        TIMER = time.time()    # reset timer
+    # check timer for all neighbour nodes
+    for n_timer in node.timer:
+        time_of_node = node.get_node_timer(n_timer)
+        end_timer = time.time() - time_of_node
+        if end_timer >= 30:     # 30 seconds threshold for not sending packets
+            print(end_timer)
+            remove_failed_link(node, n_timer)
+            node.config = True
+            node.timer[n_timer] = time.time()     # reset timer
+    
 
 
     # print('---------------------------')
@@ -191,7 +177,9 @@ def on_new_client(c, addr, node):
             # print(received_packets)
 
             # update information packets
+            # print("HERE")
             packets_in_dict = json.loads(received_packets)
+            # print(packets_in_dict)
             update_table(node, packets_in_dict)
             # print("Updated information packets\n\n\n")
 
@@ -199,6 +187,7 @@ def on_new_client(c, addr, node):
             # c.sendall(data_rev)     # relay the received packets from other clients to its own client socket
     except Exception as e:
         print(e)
+        print(str(e.__class__.__name__))
         print("Closing Connection......")
 
     c.close()
