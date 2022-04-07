@@ -6,6 +6,26 @@ import json
 
 HOST = "127.0.0.1"
 
+def update_neighbour(node):
+    neighbours = node.get_neighbours()
+    for id, port in neighbours:
+        
+        # print(f"Client {self.node.get_id()} is sending packets to {id} server's socket at port {port}...")
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.connect((HOST, port))
+                # print(f"Client {id}: Connection established with {id} server socket at port {port}")
+                data = node.get_table()
+                encoded_data = json.dumps(data).encode('utf-8')
+
+                s.sendall(encoded_data)
+                time.sleep(1)
+                s.close()
+        except:
+            # print(f"Socket {id} at port {port} is not yet established")
+            pass
+
+
 def find_link_cost(id, table):
     for k,v in table.items():
         if k == id:
@@ -15,7 +35,7 @@ def find_link_cost(id, table):
 def update_config(node):
     while 1:
         if node.get_config():
-            print(f"I am Node {node.get_id()} updating the configuration file...")
+            # print(f"I am Node {node.get_id()} updating the configuration file...")
             filename = f'{node.get_id()}config.txt'
             output = f'{len(node.get_neighbours())}\n'
             with open(filename, 'r+') as f:
@@ -29,6 +49,7 @@ def update_config(node):
                 print(output)
                 f.write(output)
             node.reset_config()
+            update_neighbour(node)      # once link cost changed, config file updated, then update the neighbour
 
                 
             
@@ -37,15 +58,17 @@ def routing_calc(node):
     print("60 seconds passed: Routing calculation waiting to for link cost change...")
     while 1:
         if node.get_updated():
-            print(f"I am Node {node.get_id()}")
-            for k,v in node.get_table().items():
+            # print(f"I am Node {node.get_id()}")
+            table = sorted(node.get_table())
+            for k in table:
                 if k != node.get_id():
                     # print(f"{k} : {v}")
                     dest = k
-                    path, link_cost = v
+                    path, link_cost = node.get_table()[k]
                     shortest_path = path + dest
                     print(f"Least cost path from {node.get_id()} to {dest}: {shortest_path}, link cost: {link_cost}")
             node.reset_updated()
+            print('\n')
 
 class Client():
     def __init__(self, node):
@@ -60,12 +83,12 @@ class Client():
             neighbours = self.node.get_neighbours()
             for id, port in neighbours:
                 
-                print(f"Client {self.node.get_id()} is sending packets to {id} server's socket at port {port}...")
+                # print(f"Client {self.node.get_id()} is sending packets to {id} server's socket at port {port}...")
 
                 try:
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                         s.connect((HOST, port))
-                        print(f"Client {id}: Connection established with {id} server socket at port {port}")
+                        # print(f"Client {id}: Connection established with {id} server socket at port {port}")
                         data = self.node.get_table()
                         encoded_data = json.dumps(data).encode('utf-8')
 
@@ -76,7 +99,7 @@ class Client():
                     # print(f"Socket {id} at port {port} is not yet established")
                     pass
 
-                print()
+                # print()
 
     def send_packets_intially(self):
         i = 0
@@ -89,8 +112,8 @@ class Client():
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     # print(f"Connecting to port {port}...")
                     s.connect((HOST, port))
-                    print(f"Client {self.node.get_id()}: Connection established with {id} server socket at port {port}")
-                    print(self.node)
+                    # print(f"Client {self.node.get_id()}: Connection established with {id} server socket at port {port}")
+                    # print(self.node)
                     # time.sleep(2)
                     data = self.node.get_table()
                     encoded_data = json.dumps(data).encode('utf-8')
@@ -116,7 +139,7 @@ class Client():
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:#s = socket.socket()         # Create a socket object
 
                 _thread.start_new_thread(routing_calc, (self.node,))
-                _thread.start_new_thread(update_config, (self.node,))
+                # _thread.start_new_thread(update_config, (self.node,))
                 # s.connect((HOST, self.node.get_port()))
                 # print(f"Client {self.node.get_id()} connected with server socket...")
 

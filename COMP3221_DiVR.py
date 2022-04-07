@@ -6,6 +6,21 @@ from Node import Node
 from Server import Server
 from Client import Client
 
+# network = {
+#     # keys from A to J 
+#     # empty dictionary as value
+#     'A': {},
+#     'B': {},
+#     'C': {},
+#     'D': {},
+#     'E': {},
+#     'F': {},
+#     'G': {},
+#     'H': {},
+#     'I': {},
+#     'J': {}
+
+# }
 def build_table(id, port, data):
     node = Node(id, port)
     node.init_table(id, 0.0)      # itself
@@ -18,12 +33,12 @@ def parse_file(file_name):
     with open(file_name, 'r') as f:
         lines = f.readlines()
         num_lines = lines[0].strip('\n')
-        print(num_lines)
+        # print(num_lines)
         data = []
         for i in range(1, int(num_lines) + 1):
             line = lines[i].strip().split(' ')
             data.append(line)
-        print(data)
+        # print(data)
         return data
 
 def init_server(node):

@@ -11,6 +11,8 @@ class Node():
         self.table = {}
         self.updated = False
         self.config = False
+        self.received = {}
+        self.counter = 0
 
     def __str__(self):
         return f"Id is: {self.id}\nPort is: {self.port}\nNeighbours are: {self.neighbours}\nTable is: {self.table}\n"
@@ -21,6 +23,12 @@ class Node():
     def get_neighbours(self):
         return self.neighbours
     
+    def get_received(self):
+        return self.received
+    
+    def add_received(self, id):
+        self.received.append(id)
+
     def get_id(self):
         return self.id
 
