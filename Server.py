@@ -80,6 +80,14 @@ def update_table(node, packets):
         if link_cost_array[1] == 0:
             from_node = id
 
+    if node.get_table()[from_node][0] == 'failed':
+        # if it was previously a failed/inactive node
+        # and it sent packets right now
+        # set it to a alive node again
+        neighbour_cost = packets[node.get_id()][1]
+        node.get_table()[from_node] = (node.get_id(), neighbour_cost)
+        node.config = True  # trigger a config update
+
     node.add_reach_table(from_node, packets)        # add to reachability matrix
 
     neighbours_id = []  # keep track of neighbour ids
@@ -124,7 +132,6 @@ def update_table(node, packets):
         end_timer = time.time() - time_of_node
         if end_timer >= 30:     # 30 seconds threshold for not sending packets
             if node.get_table()[n_timer][1] != float('inf'):
-                print(end_timer)
                 remove_failed_link(node, n_timer)
                 recalculate_links(node, n_timer)
                 bellman_ford(node, neighbours_id)  
