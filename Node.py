@@ -5,19 +5,56 @@ class Node():
         self.id = id
         self.port = port
         self.neighbours = []
+        self.table = {}     # routing table
+        self.updated = False    # check whether we can output the least cost path to the terminal
+        self.config = False     # check whether we can update the config files
+        self.counter = 0        # checks when the network is converged
+        self.timer = {}         # timer to detect if neighbour nodes are alive
+        self.triggered = False  # triggered update when link cost changes
+        self.reachability = {}
 
         # reachability matrix
-        # Key is Destination node id
-        # Value is the tuple of (least cost path, link_cost)
-        self.table = {}
-        self.updated = False
-        self.config = False
-        self.received = {}
-        self.counter = 0
-        self.timer = {}
+
+        # dictionary of dictionaries
+        # Each inner dictionary is a routing table of a neighbour node or itself
+        # Key of inner dictionaries is Destination node id
+        # Value of inner dictionaries is the tuple of (least cost path, link_cost)
+
+        """
+        {
+           'A': {'A': ('', 0),
+                'B': ('', 1.0),
+                'C': (2, 1.0)},
+            },
+            'B': {'B': ('', 0)
+                'A': ('', 1.0),
+                'C': ('', 1.0)},
+            },
+            'C': {'C': ('', 0),
+                'B': ('', 1.0),
+                'A': ('', 1.0)}
+            }
+        }
+        """
+        
 
     def __str__(self):
         return f"Id is: {self.id}\nPort is: {self.port}\nNeighbours are: {self.neighbours}\nTable is: {self.table}\n"
+
+    def in_reach(self, id):
+        return id in self.reachability
+
+    def get_reachability(self, id):
+        return self.reachability[id]
+
+    def add_reach_table(self, id, packets):
+        self.reachability[id] = packets
+
+    def get_triggered(self):
+        return self.triggered
+    
+    def reset_triggered(self):
+        self.triggered = False
 
     def add_node_timer(self, id):
         self.timer[id] = time.time()

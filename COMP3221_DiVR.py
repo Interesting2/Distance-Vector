@@ -11,10 +11,11 @@ def build_table(id, port, data):
 
     neighbours = {}
     for line in data:
-        node.add_node_timer(line[0])
+        node.add_node_timer(line[0])    # initialize a timer for each neighbour node
         node.add_neighbour(line[0], int(line[2]))
         neighbours[line[0]] = float(line[1])
 
+    # init routing table
     table = {
         'A': ('', 0.0), 
         'B': ('', 0.0), 
@@ -32,7 +33,7 @@ def build_table(id, port, data):
         if k in neighbours:
             table[k] = (id, neighbours[k])
         else:
-            table[k] = ('', float('inf'))
+            table[k] = ('', float('inf'))       # currently unknown nodes set to infinity
     node.init_table(table)
     return node
 
@@ -40,12 +41,11 @@ def parse_file(file_name):
     with open(file_name, 'r') as f:
         lines = f.readlines()
         num_lines = lines[0].strip('\n')
-        print(num_lines)
+        # print(num_lines)
         data = []
         for i in range(1, int(num_lines) + 1):
             line = lines[i].strip().split(' ')
             data.append(line)
-        print(data)
         return data
 
 def init_server(node):
@@ -62,15 +62,30 @@ def main(id, port, config):
     # pre-processing
     data = parse_file(config)
     node = build_table(id, port, data)
-    print(node)
-    
-    # # 2 threads each running the server and client
+    # test = {
+    #        'A': {'A': ('', 0),
+    #             'B': ('', 1.0),
+    #             'C': (2, 1.0)
+    #         },
+    #         'B': {'B': ('', 0),
+    #             'A': ('', 1.0),
+    #             'C': ('', 1.0)
+    #         },
+    #         'C': {'C': ('', 0),
+    #             'B': ('', 1.0),
+    #             'A': ('', 1.0)
+    #         }
+    # } 
+
+
+    # 2 threads each running the server and client
     server = init_server(node)
     threading.Thread(target=start_program, args=(server, )).start()
 
     client = init_client(node)
     time.sleep(1)
     threading.Thread(target=start_program, args=(client, )).start()
+
 
 
 if __name__ == "__main__":
